@@ -57,7 +57,7 @@ MIN_FEED = 155000
 
 MIN_DELAY = .05 #quarter second
 MAX_DELAY = .25 #2 seconds
-LOOPS = 10000
+LOOPS = 100000
 
 def meow():
     x = random.randint(MIN_X,MAX_X)
