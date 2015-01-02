@@ -13,13 +13,15 @@ class FontWriter(object):
     
 
     
-    
+    LEADING_VALUE = "g0x50\n"
     GCODE_FONT_PATH = "../GcodeFonts/RileysFont"
     alphabet = []
 
     def __init__(self):
         self.generateFontTable()  #populates lookup table for font
         self.GlowWriter = TinygSerial()
+        
+    def goInteractive(self):
         print self.BANNER
         while(1):
             
@@ -30,19 +32,20 @@ class FontWriter(object):
                 self.GlowWriter.turnOnLaser()
             elif text == "!":
                 self.GlowWriter.turnOffLaser()
-            elif text == "0":
+            elif text == "??":
                 self.GlowWriter.zero()
+            elif text == ":":
+                pass
             elif text == "*":
                 self.GlowWriter.goHome()
             else:
-                gcode_output = self.createGcodeString(text)
+                gcode_output = self.createGcodeString(text.upper())
                 #print gcode_output
-                self.GlowWriter.write(gcode_output)
-            
+                self.GlowWriter.write(gcode_output)        
 
     def _getLetter(self, letter):
         for l in self.alphabet:
-            if l.name == letter:
+            if str(l.name) == letter:
                 return l
 
 
@@ -56,10 +59,17 @@ class FontWriter(object):
                 _tmpLetter = "space"
             elif _tmpLetter == "\n":
                 _tmpLetter = "new_line"
+            elif _tmpLetter == "@":
+                _tmpLetter = "atsign"
+            elif _tmpLetter == "/":
+                _tmpLetter = "forward_slash"
+            elif _tmpLetter == "#":
+                _tmpLetter = "pound_sign"
 
             letter = self._getLetter(_tmpLetter)
-            #print letter
-            outputGcode = outputGcode + letter.gcode + SPACE
+            if(letter != None):            
+                #print letter
+                outputGcode = outputGcode + letter.gcode + SPACE
         return outputGcode
         
 
@@ -67,24 +77,24 @@ class FontWriter(object):
     def generateFontTable(self):
         upperLetters = string.uppercase
         lowerLetters = string.lowercase
-        specialChars = ["new_line","space"]
-        numbers = range(0,9)
+        specialChars = ["new_line","space", "atsign", "forward_slash", "pound_sign"]
+        numbers = range(0,10)
 
 
         self.iterateRanges(upperLetters)
         self.iterateRanges(specialChars)
         #We need to put in the lower and special chars font still
         #self.iterateRanges(lowerLetters)
-        #self.iterateRanges(numbers)
+        self.iterateRanges(numbers)
 
 
 
     def iterateRanges(self, charRange):
         for tmpChar in range(0, len(charRange)):
             for f in os.listdir(self.GCODE_FONT_PATH):
-                if charRange[tmpChar] == f.split(".gcode")[0]:
+                if str(charRange[tmpChar]) == str(f.split(".gcode")[0]):
                     tmpF = open(self.GCODE_FONT_PATH+"/"+f,"r")  
-                    gcode = tmpF.read()
+                    gcode = tmpF.read() + self.LEADING_VALUE #THIS IS THE SPACE BETWEEN LETTERS
 
                     _tmpLetter = Letter(charRange[tmpChar], gcode)
                     self.alphabet.append(_tmpLetter)
@@ -111,6 +121,9 @@ class Letter(object):
 
 class TinygSerial(object):
     def __init__(self):
+        TRAVEL_REV1 = "$1tr=25000\n"
+        TRAVEL_REV2 ="$2tr=25000\n"
+        
         tinyg = self.serial_ports()
         if(tinyg):    
             self.glowy = serial.Serial(tinyg,115200,rtscts=1)
@@ -122,6 +135,11 @@ class TinygSerial(object):
             #We are open and ready to rock the kitty time.
             print("Serial Port Opened: %s" % self.glowy.portstr)
             
+            #scaling
+            self.write(TRAVEL_REV1)             
+            self.write(TRAVEL_REV2)
+            
+            
     def turnOnLaser(self):
         self.write("m3\n")
         
@@ -132,6 +150,8 @@ class TinygSerial(object):
         self.write("G28.3X0Y0\n")
         
     def goHome(self):
+        self.write("G90\n g0x0y0\n")
+        self.write("G90\n g0x0y0\n")
         self.write("G90\n g0x0y0\n")
 
 
@@ -184,3 +204,4 @@ class TinygSerial(object):
 
 if __name__ == "__main__":
     fw = FontWriter()
+    fw.goInteractive()
