@@ -59,13 +59,13 @@ MIN_DELAY = .05 #quarter second
 MAX_DELAY = .25 #2 seconds
 LOOPS = 100000
 
-def meow():
+def meow(loopIteration, MAXLOOPS):
     x = random.randint(MIN_X,MAX_X)
     y = random.randint(MIN_Y,MAX_Y)
     feed = random.randint(MIN_FEED,MAX_FEED)
     delay = Decimal(random.uniform(MIN_DELAY, MAX_DELAY)).quantize(TWOPLACES)
 
-    print("Meow %d %d" % (x, y))
+    print("Meow #%d of %d, X:%d Y:%d %f complete." % (loopIteration, MAXLOOPS, x, y, loopIteration/MAXLOOPS))
     return(feed, delay, x,y)
 
 def main():
@@ -88,7 +88,7 @@ def main():
             s.write("m3\n")
             
             for x in range(0,LOOPS):
-                tmpfeed, tmpdelay, tmpx, tmpy = meow()
+                tmpfeed, tmpdelay, tmpx, tmpy = meow(x,LOOPS)
                 s.write("G4P%s\n" % tmpdelay)
                 s.write("g1F%s X%s Y%s\n" % (tmpfeed, tmpx, tmpy))
                 sleep(tmpdelay)
